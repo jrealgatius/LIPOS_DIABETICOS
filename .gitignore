@@ -4,6 +4,19 @@
 
 # Session Data files
 .RData
+.dta
+.sav
+.xls
+.xlsx
+
+# Word
+.doc
+.docx
+.pdf
+
+# directoris temporals 
+/temp
+
 
 # Example code in package build process
 *-Ex.R
