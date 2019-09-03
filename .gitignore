@@ -8,11 +8,13 @@
 .sav
 .xls
 .xlsx
+.rds
 
 # Word
 .doc
 .docx
 .pdf
+.html
 
 # directoris temporals 
 /temp
