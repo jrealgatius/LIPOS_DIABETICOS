@@ -1,0 +1,177 @@
+---
+title: "Lipoproteinas en diabetis (Analisis Global)"
+author: "Jordi Real"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+memory.size(max=16000)
+library("SNPassoc")
+library("htmlwidgets")
+library("compareGroups")
+library("foreign")
+library("lattice")
+library("Hmisc")
+#library("ggplot2")
+library("pander")
+library("readxl")
+library("knitr")
+#library("rmarkdown")
+library("data.table")
+```
+
+## Objectives and Hypotheses: 
+
+* 1 Ver cuales son las alteraciones de las lipoproteinas en cada grupo (control, prediabético y diabético)  
+* 2 Alteraciones de las lipos en función del control glucémico en pacientes diabeticos
+* 3 Describir los valores de normalidad
+
+***
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+###                    FUNCIONS                                   #####
+###
+directori.arrel<-c("C:/Users/Jordi/Google Drive", 
+                   "C:/Users/usuari/Google Drive",
+                   "C:/Users/43728088M/Google Drive",
+                   "C:/Users/jreal/Google Drive",
+                   "D:/Google Drive",
+                   "G:/Google Drive",
+                   "E:/Google Drive")
+
+library(dplyr)
+directori.arrel[file.exists(directori.arrel)] %>% 
+  file.path("Stat_codis/funcions_propies.R") %>% 
+  source()
+
+#########################################################################################
+#### setwd en directori de treball 
+
+"CIBERDEM/ESMERALDA/LIPOS_DIABETICOS" %>% 
+  directori_treball(directori.arrel)
+
+
+load("TAULES_LIPOS_global.Rdata")
+
+##    -Edició de paràmetres     -----------------
+##
+## setwd en directori de treball 
+
+
+```
+
+
+# T1. Caracteristicas por grupo (control, prediabético y diabético)  
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+#######################   CLINICAS  
+
+export2md(T0.1.1, caption = "Descriptive analysis of clinical variables by group")
+
+export2md(T0.1.2, caption = "Descriptive analysis of clinical variables by group (Median[Q1-Q3])")
+
+# export2md(T0.2, caption = "Descriptive analysis of clinical variables by group (paired test)")
+
+
+```
+
+# T1. Comparativa de las lipoproteinas en cada grupo (control, prediabético y diabético)  
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+export2md(T1.1.1, caption = "T1.1. Descriptive analysis liproteins variables by group")
+
+export2md(T1.1.2, caption = "T1.2. Descriptive analysis liproteins variables by group")
+
+
+kable(T1.5,format="pandoc",digits=4,caption="Pvalues adjusted by multitesting")
+
+
+
+```
+
+# Comparativa de las lipoproteinas cruda y ajustada en cada grupo (control, prediabético y diabético)  
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+kable(taulacoef_DMvsPREDM,digits = 3,format="pandoc",caption=paste0("Adjusted by:",text_taula))
+
+
+
+```
+
+
+# 2 Alteraciones de las lipos en función del grado de control glucémico en pacientes diabeticos 
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+##################    Clínicas 
+
+export2md(T2.0, caption="Variables clínicas")
+
+```
+
+# 2 Alteraciones de las lipos en función del control glucémico en pacientes diabeticos 
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+
+export2md(T2.1, caption="Variables Lipos")
+
+print("")
+
+export2md(T2.2, caption="Median [Q1;Q4]")
+
+print("")
+
+kable(taula_sig,caption="p values adjusted by multitesting",format="pandoc")
+
+
+```
+
+
+# Adjusted analysis
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+
+kable(taulacoef_HB,digits = 3,format="pandoc",caption=paste0("Adjusted by:",text_taula))
+
+
+```
+
+
+# Correlation analysis 
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+kable(TAULA_HB_Lipos,caption="HB1AC vs Lipos adjusted",format="pandoc",digits = 3)
+
+```
+
+
+# Describir valores de normalidad (DLP=No & Prediabetes=No + Controles de Mollerussa+CanRuti) 
+
+Filtro:  DLP=No & Prediabetes=No + Controles de Mollerussa+CanRuti
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+
+export2md(rbind("Mean(SD)"=T3.1,"Median[Q1-Q3]"=T3.2,"Median[Min;Max]"=T3.3),caption="Descriptivos de valores de normalidad")
+
+
+```
+
+
+
