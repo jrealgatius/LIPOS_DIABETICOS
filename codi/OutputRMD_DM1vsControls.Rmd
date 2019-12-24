@@ -1,0 +1,122 @@
+---
+title: "DMT1 vs Controls "
+author: "Jordi Real"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+#memory.size(max=4000)
+library("SNPassoc")
+library("htmlwidgets")
+library("compareGroups")
+library("foreign")
+library("lattice")
+library("Hmisc")
+#library("ggplot2")
+library("pander")
+library("readxl")
+library("knitr")
+#library("rmarkdown")
+library("data.table")
+
+```
+
+##  Seleccionar controles para cada tipo de diabetes (edad y sexo)
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+####  Llegir dades    #####
+
+setwd ("G:/Google Drive/CIBERDEM/ESMERALDA/LIPOS_DIABETICOS")
+
+load("Analisis_DM1vsControls")
+
+```
+
+# Table 1. Clinical and demographic characteristics of patients
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+propensityDM1
+
+
+
+export2md(taula3)
+
+
+```
+
+
+# Table 2. LIPOS diferences between presence of type 1 diabetes and controls
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+export2md(taula2)
+
+print("p valors ajustats")
+# The "BH" (aka "fdr") and "BY" method of Benjamini, Hochberg, and Yekutieli control the false discovery rate, 
+
+
+kable(pvalstaula1)
+
+
+
+```
+
+# Table 3. OR adjusted of presence of type 1 diabetic and controls
+
+Adjusted by: 
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+print(variablesajust1)
+
+kable(ajustats,digits=3,caption="OR and p-value adjusted")
+
+
+```
+
+# Excluimos los pacientes dislipemicos
+
+## No Dislipemicos 
+
+# Table 2.1. Clinical and demographic characteristics of patients without dislipemia
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+export2md(taula3NODL)
+
+```
+
+# Table 2.2. LIPOS diferences between presence of type 1 diabetes and controls
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge",results='asis'}
+
+export2md(taula1.NODLP)
+
+kable(pvalstaulaNODSL,digits=3)
+
+
+```
+
+# Table 2.3. LIPOS diferences between presence of type 1 diabetes and controls (adjusted)
+
+Ajustado por: 
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge",results='asis'}
+
+print(variablesajust2)
+
+
+kable(ajustatsNODL,digits=3)
+
+
+
+```
+
+
+

@@ -1,0 +1,312 @@
+---
+title: "Lipoproteinas en diabetis (Analisis Subgrupo Sin Estatinas)"
+author: "Jordi Real"
+website: "https://github.com/USR-DAPCAT/"
+
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    fig_caption: true
+  pdf_document: default
+  word_document: default
+
+---
+
+&nbsp;
+<script>
+   $(document).ready(function() {
+     $head = $('#header');
+     $head.prepend('<img src=\"logos/logoIDIAP.png\" style=\"float: right ;width: 130px;\"/>')
+     $head.prepend('<img src=\"logos/logo_bio.jpg\" style=\"margin-left:25% ;width: 80px;\"/>')
+     $head.prepend('<img src=\"logos/logoDAP_Cat.png\" style=\"float: left:1;width: 185px;\"/>')
+   });
+</script>
+
+****
+
+## 0. Estat:
+
+**Últimes actualizacions** 
+
+&check; Análisis estratificado por sexo  <br/>
+&check; Añadir las P's de las comparaciones entre grupos de las variables clinicas de la tabla 1  <br/>
+&check; Analizar todas las variables de las lipoproteinas en todas las tablas <br/>
+
+**Realizat**
+
+&check; Subanalisis només pacients DM <br/>
+&check; Reanalisis excloent pacients amb estatinas <br/>
+&check; Actualizació de lipos <br/>
+&check; Analisis ajustat  <br/>
+&check; Analisis descriptiu 1  <br/>
+&check; Analisis població global cru/ajustat <br/>
+&check; Subanàlisis 1: Sense estatines <br/>
+&check; Subanàlisis 2: Població sense estatines + fibratos <br/>
+&check; Subanàlisis 3: Població DM: HbA1c estratificada >> <7 / 7-8 / >8 (Cru/Ajustat) <br/>
+&check; Descriptiu (Població Normal) <br/>
+&check; Càlculs de valors de normalitat Lipos <br/>
+&check; Controles de Mollerusa (variable Origen 2) y Can Ruti (variable Origen 4) + eliminar a los que tengan DLP. <br/>
+&check; Describir valores de normalidad (DLP=No & Prediabetes=No + Controles de Mollerussa+CanRuti)
+&check; Formateig de base de dades  <br/>
+&check; Depuració d'errades  <br/>
+&check; Recodificacions  <br/>
+&check; Lectura de dades  <br/>
+&check; Captura de lipoproteinas    <br/>
+
+**Pendent**
+
+* Validación clínica
+* Edició de taules 
+* Redacció d'article 
+
+## 1. Objectius
+
+* 1 Evaluar las alteraciones de las lipoproteinas en cada grupo (control, prediabético y diabético)  
+* 2 Alteraciones de las lipos en función del control glucémico en pacientes diabeticos
+* 3 Describir los valores de normalidad
+
+
+## 2. Mètodes
+
+- No consta protocol d'analisis ni SAP 
+
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE, include=F,size="huge")
+library(ggplot2)
+library(dplyr)
+# CArrego funcions -------------------
+link_source<-paste0("https://github.com/jrealgatius/Stat_codis/blob/master/funcions_propies.R","?raw=T")
+devtools::source_url(link_source)
+
+
+
+#   template: template.html
+```
+
+
+```{r utilsrmarkdown}
+# ![](logoDAP_Cat.png)
+```
+
+
+```{r lectura, echo=FALSE, message=FALSE, warning=FALSE}
+# Carrega dades
+load(here::here("codi/RData","TAULES_LIPOS_S_Estatines.Rdata"))
+
+
+```
+
+
+```{r preparacio,include=F}
+
+
+
+```
+
+## 3.Resultats 
+
+### 1 Características por grupo (control, prediabético y diabético)  
+
+
+```{r resultats1, include=T}
+
+#######################   CLINICAS  
+
+export2md(T0.1.1, caption = "Descriptive analysis of clinical variables by group")
+
+export2md(T0.1.2, caption = "Descriptive analysis of clinical variables by group (Median[Q1-Q3])")
+
+
+```
+
+
+### 2 Características clínicas por grupo (control, prediabético y diabético) por sexos
+
+
+```{r resultats2, include=T}
+
+#######################   CLINICAS  
+
+
+export2md(T0.1.1.sex, caption = "Descriptive analysis of clinical variables by group stratified by sex")
+
+export2md(T0.1.2.sex, caption = "Descriptive analysis of clinical variables by group (Median[Q1-Q3])")
+
+
+```
+
+
+### 3 Comparativa cruda de las lipoproteinas en cada grupo (control, prediabético y diabético)  
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+export2md(T1.1.1, caption = "T1.1. Descriptive analysis liproteins variables by group (mean (SD))")
+
+export2md(T1.1.2, caption = "T1.2. Descriptive analysis liproteins variables by group (Median [Q1;Q3])")
+
+kable(T1.5,format="pandoc",digits=4,caption="Pvalues adjusted by multitesting")
+
+```
+
+
+### 4 Comparativa cruda de las lipoproteinas en cada grupo (control, prediabético y diabético)  Estratificado por sexos 
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+
+export2md(T1.1.1.sex, caption = "Descriptive analysis liproteins variables by group (mean (SD))")
+
+export2md(T1.1.2.sex, caption = "Descriptive analysis liproteins variables by group (Median [Q1;Q3])")
+
+## BY sex crude 
+# Ajustat multitesting 
+kable(T1.5.sexH,format="pandoc",digits=4, caption= "P adjusted by multitesting: Strata=H")
+
+kable(T1.5.sexD,format="pandoc",digits=4, caption= "P adjusted by multitesting: Strata=D")
+
+
+
+
+```
+
+
+
+### 5 Comparativa de las lipoproteinas cruda y ajustada en cada grupo (control, prediabético y diabético)  
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+kable(taulacoef_DMvsPREDM,digits = 3,format="pandoc",caption=paste0("Adjusted by:",text_taula))
+
+
+```
+
+
+### 6 Comparativa de las lipoproteinas cruda y ajustada en cada grupo (control, prediabético y diabético) estratificado por sexos
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+### ???
+
+kable(taulacoef_DMvsPREDM_sexH,digits = 3,format="pandoc",caption=paste0("Adjusted by:",text_taula, ":Men"))
+
+kable(taulacoef_DMvsPREDM_sexD,digits = 3,format="pandoc",caption=paste0("Adjusted by:",text_taula, ":Women"))
+
+
+
+
+```
+
+
+### 7 Alteraciones de las lipos en función del grado de control glucémico en pacientes diabeticos 
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+##################    Clínicas 
+
+export2md(T2.0, caption="Variables clínicas")
+
+export2md(T2.0.sex, caption="Variables clínicas")
+
+
+
+```
+
+
+
+### 8 Alteraciones de las lipos en función del control glucémico en pacientes diabeticos 
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+export2md(T2.1, caption="Variables Lipos")
+print("")
+
+export2md(T2.2, caption="Median [Q1;Q3]")
+print("")
+
+export2md(T2.1.sex, caption="Variables Lipos")
+print("")
+
+export2md(T2.2.sex, caption="Median [Q1;Q3]")
+print("")
+
+kable(taula_sig,caption="p values adjusted by multitesting",format="pandoc")
+
+kable(taula_sig.H,caption="p values adjusted by multitesting Homes",format="pandoc")
+
+kable(taula_sig.D,caption="p values adjusted by multitesting Dones",format="pandoc")
+
+
+```
+
+
+### 9 Adjusted analysis (HB categoritzat)
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+
+kable(taulacoef_HB,digits = 3,format="pandoc",caption=paste0("Adjusted by:",text_taula))
+
+
+```
+
+
+### 10 Regression analysis
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+kable(TAULA_HB_Lipos_crus,caption=taula_coef_hb_crus$caption,format="pandoc",digits = 3)
+
+print("")
+
+kable(TAULA_HB_Lipos_adj,caption=taula_coef_hb_adj$caption,format="pandoc",digits = 3)
+
+
+
+```
+
+
+### 11 Describir valores de normalidad (DLP=No & Prediabetes=No + Controles de Mollerussa+CanRuti) 
+
+> Filtro:  DLP=No & Prediabetes=No + Controles de Mollerussa+CanRuti
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+
+export2md(rbind("Mean(SD)"=T3.1,"Median[Q1-Q3]"=T3.2,"Median[Min;Max]"=T3.3),caption="Descriptivos de valores de normalidad")
+
+
+```
+
+
+
+### 12 Describir valores de normalidad (DLP=No & Prediabetes=No + Controles de Mollerussa+CanRuti) estratificado por sexos
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+
+export2md(T3.1.sex,caption = "Descriptivos de valores de normalidad, mean (SD)")
+
+export2md(T3.2.sex,caption = "Descriptivos de valores de normalidad, Median[Q1-Q3]")
+
+export2md(T3.3.sex,caption = "Descriptivos de valores de normalidad, Median[Min;Max]")
+
+
+```
+
+&nbsp;
+<hr />
+<p style="text-align: center;">A work by $Jordi Real$ </a></p>
+<p style="text-align: center;"><span style="color: #808080;"><em><https://github.com/USR-DAPCAT/></em></span></p>
+
+
+

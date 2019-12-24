@@ -37,19 +37,11 @@ library("data.table")
 ```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
 ###                    FUNCIONS                                   #####
 ###
-directori.arrel<-c("C:/Users/Jordi/Google Drive", 
-                   "C:/Users/usuari/Google Drive",
-                   "C:/Users/43728088M/Google Drive",
-                   "C:/Users/jreal/Google Drive",
-                   "D:/Google Drive",
-                   "G:/Google Drive",
-                   "E:/Google Drive")
 
-library(dplyr)
-directori.arrel[file.exists(directori.arrel)] %>% 
-  file.path("Stat_codis/funcions_propies.R") %>% 
-  source()
+# Carrega de funcions 
 
+link_source<-paste0("https://github.com/jrealgatius/Stat_codis/blob/master/funcions_propies.R","?raw=T")
+devtools::source_url(link_source)
 #########################################################################################
 #### setwd en directori de treball 
 
@@ -74,6 +66,7 @@ load("TAULES_LIPOS_S_Estatines.Rdata")
 #######################   CLINICAS  
 
 export2md(T0.1.1, caption = "Descriptive analysis of clinical variables by group")
+
 
 export2md(T0.1.2, caption = "Descriptive analysis of clinical variables by group (Median[Q1-Q3])")
 

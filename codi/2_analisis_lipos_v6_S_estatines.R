@@ -1,6 +1,6 @@
 ###                              Analisis LIPOS --------------
 
-#        07/01/2019
+#        23/12/2019
 
 ## 0.Índex  -------------
 
@@ -37,7 +37,7 @@ devtools::source_url(link_source)
 
 
 ##    -Edició de paràmetres     -----------------
-fitxer_lectura<-"BD_LIPOS_N1217.sav"
+# fitxer_lectura<-"BD_LIPOS_N1217.sav"
 
 fitxer_output<-"TAULES_LIPOS_S_Estatines.Rdata"
 
@@ -51,8 +51,35 @@ fitxer_output<-"TAULES_LIPOS_S_Estatines.Rdata"
 ##    -Preparació: Lectura de fitxer de dades            ----------------------                     
 ####  Llegir dades    
 
-dades<-readRDS(here::here("dades","BD_LIPOS_N1217_lipos.rds"))
+# dades<-readRDS(here::here("dades","BD_LIPOS_N1217_lipos.rds"))
+dades<-read.spss(here::here("dades","BD_LIPOS_N1217_nou.sav"),use.value.labels = T,to.data.frame = T)
+dades<-dades %>% mutate (ID=stringr::str_trim(as.character(ID))) %>% as_tibble()
 
+
+# dades_lipos<-haven::read_spss(here::here("dades","LIPOS_TOTAL_N1644.sav"))
+dades_lipos<-read.spss(here::here("dades","LIPOS_TOTAL_N1644.sav"),use.value.labels = T,to.data.frame = T)
+
+dades_lipos<-dades_lipos %>% rename(ID=ID_Client) %>% 
+  mutate(ID=stringr::str_trim(as.character(ID))) %>% 
+  mutate(Sample_ID_Client=stringr::str_trim(as.character(Sample_ID_Client))) %>% 
+  as_tibble()
+
+# Eliminar repetit ID=="T2D319" sense Sample_ID_Client
+dades_lipos<-dades_lipos %>% filter(!(ID=="T2D319" & Sample_ID_Client==""))
+
+
+# Seleccionar lipos
+dades_lipos<-dades_lipos %>% select("ID","VLDL_C":"LDL_PHDL_P")
+
+# Treure les lipos de dades 
+dades<-dades %>% dplyr::select(-c("VLDL_C":"LDL_PHDL_P"))
+
+# Juntat novament dades 
+dades<-dades %>% left_join(dades_lipos,by="ID")
+
+
+
+# Capturar LIPOS ACTUALS
 # dades<-read.spss(fitxer_lectura,use.value.labels = TRUE,to.data.frame=TRUE)
 
 ##    -Etiquetar variables  ----------------
@@ -61,6 +88,7 @@ dades<-etiquetar(dades,taulavariables = "VARIABLES.xls")
 ## Fase: PREPARACIÓ DE VARIABLES  ------------------------------
 
 ##  1. Calcular % de cada grup de lipos (Larg+Medium+Small)  ----------
+
 
 # % VLDL
 dades<-dades %>% mutate(
@@ -129,6 +157,7 @@ dades<-dades %>% recodificar(taulavariables="VARIABLES.xls",criteris="recode1")
 dades<-dades %>% filter(!(Statins=="Yes" | Fibrate=="Yes")) 
 
 
+
 # Copia 
 dadestotal<-dades
 
@@ -141,28 +170,45 @@ dadestotal<-dades
 T0.1.1<-descrTable(formula_compare(x="clinicas",y="Prediabetes",taulavariables ="VARIABLES.xls"),data=dades,method = 1)
 T0.1.1
 
-T0.1.2<-descrTable(formula_compare(x="clinicas",y="Prediabetes",taulavariables ="VARIABLES.xls"),data=dades,method = 2,show.p.overall = F)
+T0.1.1.sex<-strataTable(T0.1.1, "Sex")
+
+T0.1.2<-descrTable(formula_compare(x="clinicas_conti",y="Prediabetes",taulavariables ="VARIABLES.xls"),data=dades,method = 2,show.p.overall = F)
 T0.1.2
+
+T0.1.2.sex<-strataTable(T0.1.2, "Sex")
 
 ##  2. Descriptiu cru/ comparatiu Lipos global y 2 a 2    ------------------------
 
 T1.1.1<-descrTable(formula_compare(x="lipos",y="Prediabetes",taulavariables ="VARIABLES.xls"),data=dades,method=1,show.p.overall = F)
 T1.1.1
 
+T1.1.1.sex<-strataTable(T1.1.1, "Sex")
+
 T1.1.2<-descrTable(formula_compare(x="lipos",y="Prediabetes",taulavariables ="VARIABLES.xls"),data=dades,method=2,show.p.overall = F)
 T1.1.2
 
+T1.1.2.sex<-strataTable(T1.1.1, "Sex")
+
+
+
 ##  3. Diferencies (DM, Pre vs control) i P valors crus ajustats-multitesting  ------------
-
 T1.3<-descrTable(formula_compare(x="lipos2",y="Prediabetes",taulavariables ="VARIABLES.xls"),data=dades,show.descr = F,show.p.overall = F,show.p.mul = T)
-
 # Ajustat multitesting 
-T1.5<-Pvalors_ajustats_compare(objecte_compare=T1.3,metodo = "bonferroni",p="p.mul")
-
+T1.5<-Pvalors_ajustats_compare(objecte_compare=T1.3,metodo = "BH",p="p.mul")
 kable(T1.5,format="pandoc",digits=4, caption= "P adjusted by multitesting")
 
-##  4. Coeficients crus i ajustats ---------------------
+## BY sex crude 
+# Ajustat multitesting 
+T1.3<-descrTable(formula_compare(x="lipos2",y="Prediabetes",taulavariables ="VARIABLES.xls"),data=dades,subset = Sex=="Men",show.descr = F,show.p.overall = F,show.p.mul = T)
+T1.5.sexH<-Pvalors_ajustats_compare(objecte_compare=T1.3,metodo = "BH",p="p.mul")
+kable(T1.5.sexH,format="pandoc",digits=4, caption= "P adjusted by multitesting: Strata=H")
 
+T1.3<-descrTable(formula_compare(x="lipos2",y="Prediabetes",taulavariables ="VARIABLES.xls"),data=dades,subset = Sex=="Women",show.descr = F,show.p.overall = F,show.p.mul = T)
+T1.5.sexD<-Pvalors_ajustats_compare(objecte_compare=T1.3,metodo = "BH",p="p.mul")
+kable(T1.5.sexD,format="pandoc",digits=4, caption= "P adjusted by multitesting: Strata=D")
+
+
+##  4. Coeficients crus i ajustats ---------------------
 ## Capturo taula de coeficients, crus i ajustats
 z<-c("","age.sex.ajust","v.ajust")
 coeficients<-z %>% map(extreure_coef_glm,dt=dades,outcomes = "lipos2",x="Prediabetes",taulavariables ="VARIABLES.xls")
@@ -198,7 +244,74 @@ taulacoef_DMvsPREDM<-Pvalors_ajustats_taula(objecte_taula=taulacoef, p.valors='P
 
 text_taula<-extreure.variables("v.ajust",taulavariables = "VARIABLES.xls") %>% paste(collapse = "+")
 
+# Resultats ---
 kable(taulacoef_DMvsPREDM,digits = 3,format="pandoc",caption=paste0("Adjusted by:",text_taula))
+
+
+##  4. Coeficients crus i ajustats SRAT PER SEXE ------------------------
+dadesH<-dades %>% filter(Sex=="Men")
+dadesD<-dades %>% filter(Sex=="Women")
+
+## Capturo taula de coeficients, crus i ajustats   HOMES ------------
+z<-c("","age.ajust","v.ajust2")
+coeficients<-z %>% map(extreure_coef_glm,dt=dadesH,outcomes = "lipos2",x="Prediabetes",taulavariables ="VARIABLES.xls")
+
+taula_coef_cru<-coeficients[[1]]$coef %>% as_tibble %>% 
+  setnames("Estimate","B_crude")
+
+taula_coef_age.sex<-coeficients[[2]]$coef %>% as_tibble %>% 
+  setnames(c("Estimate","Pr(>|t|)"),
+           c("Badj_Age","Padj_Age"))
+
+taula_coef_ajust<-coeficients[[3]]$coef %>% as_tibble %>% 
+  setnames(c("Estimate","Pr(>|t|)"),
+           c("B_adj","P_adj"))
+
+taulacoef<-taula_coef_cru %>% 
+  cbind(select(taula_coef_age.sex,-c(Outcome,Cat.X,`Std. Error`))) %>% 
+  cbind(select(taula_coef_ajust,-c(Outcome,Cat.X,`Std. Error`))) %>% 
+  as_tibble
+
+##  Ajusto per comparacions multiples 
+taulacoef_DMvsPREDM_sexH<-Pvalors_ajustats_taula(objecte_taula=taulacoef, p.valors='P_adj', metodo="bonferroni") %>% 
+  select(-P_adj)
+
+text_taula<-extreure.variables("v.ajust2",taulavariables = "VARIABLES.xls") %>% paste(collapse = "+")
+# Resultats ---
+kable(taulacoef_DMvsPREDM_sexH,digits = 3,format="pandoc",caption=paste0("Adjusted by:",text_taula))
+
+
+
+
+## Capturo taula de coeficients, crus i ajustats   DONES  ------------
+z<-c("","age.ajust","v.ajust2")
+coeficients<-z %>% map(extreure_coef_glm,dt=dadesD,outcomes = "lipos2",x="Prediabetes",taulavariables ="VARIABLES.xls")
+
+taula_coef_cru<-coeficients[[1]]$coef %>% as_tibble %>% 
+  setnames("Estimate","B_crude")
+
+taula_coef_age.sex<-coeficients[[2]]$coef %>% as_tibble %>% 
+  setnames(c("Estimate","Pr(>|t|)"),
+           c("Badj_Age","Padj_Age"))
+
+taula_coef_ajust<-coeficients[[3]]$coef %>% as_tibble %>% 
+  setnames(c("Estimate","Pr(>|t|)"),
+           c("B_adj","P_adj"))
+
+taulacoef<-taula_coef_cru %>% cbind(select(taula_coef_age.sex,-c(Outcome,Cat.X,`Std. Error`))) %>% 
+  cbind(select(taula_coef_ajust,-c(Outcome,Cat.X,`Std. Error`))) %>% 
+  as_tibble
+
+##  Ajusto per comparacions multiples 
+taulacoef_DMvsPREDM_sexD<-Pvalors_ajustats_taula(objecte_taula=taulacoef, p.valors='P_adj', metodo="bonferroni") %>% 
+  select(-P_adj)
+
+text_taula<-extreure.variables("v.ajust2",taulavariables = "VARIABLES.xls") %>% paste(collapse = "+")
+# Resultats ---
+kable(taulacoef_DMvsPREDM_sexD,digits = 3,format="pandoc",caption=paste0("Adjusted by:",text_taula))
+
+
+
 
 ## * B) Alteraciones de las lipoproteinas en pacientes DM segun grado de control  ----------------
 ##  Analisis subgrup DM: Relació amb control HB (<7 / 7-8 / >8)        ----------------------
@@ -207,32 +320,43 @@ kable(taulacoef_DMvsPREDM,digits = 3,format="pandoc",caption=paste0("Adjusted by
 # Didac: Bien /regular /mal controlados. Todas las variables 
 # Filtre 
 dades<-dades %>% filter(DM=="T2D")
+dadesH<-dades %>% filter(Sex=="Men")
+dadesD<-dades %>% filter(Sex=="Women")
+
 
 ##  5.1. Taules descriptives Clíniques  --------------------
 ##################    Clínicas 
 
 T2.0<-descrTable(formula_compare(x="clinicas",y="HbA1c_cat3",taulavariables ="VARIABLES.xls"),data=dades,show.p.trend = T,show.p.overall = F)
-
-T2.0
+T2.0.sex<-strataTable(T2.0, "Sex")
 
 ##  5.2. Taules Lipos                   --------------------
-
 T2.1<-descrTable(formula_compare(x="lipos",y="HbA1c_cat3",taulavariables ="VARIABLES.xls"),data=dades,show.p.trend = T,show.p.overall = F)
-
 T2.1
+T2.1.sex<-strataTable(T2.1, "Sex")
 
 T2.2<-descrTable(formula_compare(x="lipos",y="HbA1c_cat3",taulavariables ="VARIABLES.xls"),data=dades,show.p.trend = F,method = 4,show.p.overall = F)
-
 T2.2
 
+T2.2.sex<-strataTable(T2.2, "Sex")
 
 ##  5.3. Multitesting i ajustat   -----------------
 
 T2.3<-descrTable(formula_compare(x="lipos2",y="HbA1c_cat3",taulavariables ="VARIABLES.xls"),data=dades,show.p.mul = T,show.descr = F,show.p.overall = F)
-
-taula_sig<-Pvalors_ajustats_compare(T2.3,metodo="bonferroni",p="p.mul",Sig="Si")
-
+taula_sig<-Pvalors_ajustats_compare(T2.3,metodo="BH",p="p.mul",Sig="Si")
 kable(taula_sig,caption="p values adjusted by multitesting",format="pandoc")
+
+# Per sexe 
+
+T2.3<-descrTable(formula_compare(x="lipos2",y="HbA1c_cat3",taulavariables ="VARIABLES.xls"),data=dadesH,show.p.mul = T,show.descr = F,show.p.overall = F)
+taula_sig.H<-Pvalors_ajustats_compare(T2.3,metodo="BH",p="p.mul",Sig="Si")
+kable(taula_sig.H,caption="p values adjusted by multitesting Homes",format="pandoc")
+
+T2.3<-descrTable(formula_compare(x="lipos2",y="HbA1c_cat3",taulavariables ="VARIABLES.xls"),data=dadesD,show.p.mul = T,show.descr = F,show.p.overall = F)
+taula_sig.D<-Pvalors_ajustats_compare(T2.3,metodo="BH",p="p.mul",Sig="Si")
+kable(taula_sig.D,caption="p values adjusted by multitesting Dones",format="pandoc")
+
+
 
 ## Capturo taula de coeficients, crus i ajustats
 z<-c("","age.sex.ajust","v.ajust")
@@ -288,8 +412,9 @@ taula_coef_hb_adj<-extreure_coef_glm(dt=dades,outcomes="lipos2",x="HbA1c",z="v.a
 TAULA_HB_Lipos_adj<-Pvalors_ajustats_taula(objecte_taula=taula_coef_hb_adj$coef, p.valors='Pr(>|t|)', metodo="bonferroni")
 kable(TAULA_HB_Lipos_adj,caption=taula_coef_hb_adj$caption,format="pandoc",digits = 3)
 
-## * C) Describir valores de normalidad (DLP=No & Prediabetes=No + Controles de Mollerussa+CanRuti) -------------
 
+
+## * C) Describir valores de normalidad (DLP=No & Prediabetes=No + Controles de Mollerussa+CanRuti) -------------
 ## Filtro:  DLP=No & Prediabetes=No + Controles de Mollerussa+CanRuti
 
 dades<-dadestotal
@@ -305,22 +430,23 @@ T3.1<-descrTable(~Total_cholesterol + HDL_cholesterol,data=subset_dades,method =
 
 T3.1<-descrTable(formula_compare(x="lipos",y="",taulavariables ="VARIABLES.xls"),data=subset_dades,method = 1)
 T3.1
+T3.1.sex<-strataTable(T3.1,"Sex")
 
 T3.2<-descrTable(formula_compare(x="lipos",y="",taulavariables ="VARIABLES.xls"),data=subset_dades,method = 4)
 T3.2
+T3.2.sex<-strataTable(T3.2,"Sex")
 
 T3.3<-descrTable(formula_compare(x="lipos",y="",taulavariables ="VARIABLES.xls"),data=subset_dades,method=4, Q1 = 0, Q3 = 1)
 T3.3
-
+T3.3.sex<-strataTable(T3.3,"Sex")
 
 rbind("Mean(SD)"=T3.1,"Median[Q1-Q3]"=T3.2,"Median[Min;Max]"=T3.3)
-
 
 # --------------------------------  FI      ----------------------------
 
 # Salvar-ho ---------------------
 
-save.image(fitxer_output)
+save.image(here::here("codi/RData",fitxer_output))
 
 
 # Subanalisis: ---------------- 
