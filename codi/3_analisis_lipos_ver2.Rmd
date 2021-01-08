@@ -1,0 +1,935 @@
+---
+title: "Lipoproteinas en diabetis (Analisis Subgrupo Sin Estatinas)"
+author: "Jordi Real"
+website: "https://github.com/USR-DAPCAT/"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: TRUE
+    fig_caption: true
+  pdf_document: default
+  word_document: default
+---
+
+&nbsp;
+<script>
+   $(document).ready(function() {
+     $head = $('#header');
+     $head.prepend('<img src=\"logos/logoIDIAP.png\" style=\"float: right ;width: 130px;\"/>')
+     $head.prepend('<img src=\"logos/logo_bio.jpg\" style=\"margin-left:25% ;width: 80px;\"/>')
+     $head.prepend('<img src=\"logos/logoDAP_Cat.png\" style=\"float: left:1;width: 185px;\"/>')
+   });
+</script>
+
+****
+
+## 0. Estat:
+
+**Últimes actualizacions** 
+
+> 18/12/2020
+
+&check;  Nova classificació de Perfil lipidic normal i validació  <br/>
+
+&check;  Classificació de Perfil lipidic normal i validació  <br/>
+&check;  Agrupació de valors de lipidomica en normal / alterat en funció de valors de referencia  <br/>
+&check;  Descriptiva de la edat <br/>
+&check;  Taula descriptiva de valors lipidics per grups d'edat <br/>
+
+
+**Realizat**
+
+> 23/06/2020
+
+&check; tabla 5 faltan las variables HDL-TG, LDL-TG, VLDL-TG, HDL-C, LDL-C, VLDL-C (las variables que tienes en porcentajes) <br/>
+&check; Rehacer plot de correlaciones de LIPOS con por valores absolutos (No porcentajes (%)) <br/>
+
+
+>
+
+&check; calcular las p  entre hombreas y mujeres de la población de referencia, es decir de los 418 pacientes normoglucemicos <br/>
+
+>
+
+&check; P-valores de comparaciones multiples 2 a 2 variables clínicas  <br/>
+&check; Correlaciones bivariadas: Añadir TG, LDLs, GPT y quitar otras   <br/>
+&check; Actualizar resultados <br/>
+
+&check; Añadir descriptivos de las lipos (p10 y p90)  <br/>
+&check; Mismos descriptivos por subgrupos de IMC x sexo <br/>
+&check; Correlaciones de cada lipo con variables clínicas por grupo (Control) <br/>
+&check; Figura de correlaciones   <br/>
+&check; Evaluar diferencias sig (características clínicas) entre sexos en el grupo control  <br/>
+&check; Evaluar diferencias sig (Lipos) entre sexos en el grupo control  <br/>
+&check; Análisis estratificado por sexo  <br/>
+&check; Añadir las P's de las comparaciones entre grupos de las variables clinicas de la tabla 1  <br/>
+&check; Analizar todas las variables de las lipoproteinas en todas las tablas <br/>
+&check; Subanalisis només pacients DM <br/>
+&check; Reanalisis excloent pacients amb estatinas <br/>
+&check; Actualizació de lipos <br/>
+&check; Analisis ajustat  <br/>
+&check; Analisis descriptiu 1  <br/>
+&check; Analisis població global cru/ajustat <br/>
+&check; Subanàlisis 1: Sense estatines <br/>
+&check; Subanàlisis 2: Població sense estatines + fibratos <br/>
+&check; Subanàlisis 3: Població DM: HbA1c estratificada >> <7 / 7-8 / >8 (Cru/Ajustat) <br/>
+&check; Descriptiu (Població Normal) <br/>
+&check; Càlculs de valors de normalitat Lipos <br/>
+&check; Controles de Mollerusa (variable Origen 2) y Can Ruti (variable Origen 4) + eliminar a los que tengan DLP. <br/>
+&check; Describir valores de normalidad (DLP=No & Prediabetes=No + Controles de Mollerussa+CanRuti)
+&check; Formateig de base de dades  <br/>
+&check; Depuració d'errades  <br/>
+&check; Recodificacions  <br/>
+&check; Lectura de dades  <br/>
+&check; Captura de lipoproteinas    <br/>
+
+**Pendent**
+
+* Validación clínica
+* Edició de taules 
+* Redacció d'article 
+
+## 1. Objectius
+
+* 1 Evaluar las alteraciones de las lipoproteinas en cada grupo (control, prediabético y diabético)  
+* 2 Alteraciones de las lipos en función del control glucémico en pacientes diabeticos
+* 3 Describir los valores de normalidad
+
+
+## 2. Mètodes
+
+- No consta protocol d'analisis ni SAP 
+
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE, include=F,size="huge")
+library(ggplot2)
+library(dplyr)
+# CArrego funcions -------------------
+link_source<-paste0("https://github.com/jrealgatius/Stat_codis/blob/master/funcions_propies.R","?raw=T")
+devtools::source_url(link_source)
+
+
+
+#   template: template.html
+```
+
+
+```{r utilsrmarkdown}
+# ![](logoDAP_Cat.png)
+```
+
+
+```{r lectura, echo=FALSE, message=FALSE, warning=FALSE}
+# Carrega dades
+# load(here::here("codi/RData","TAULES_LIPOS_S_Estatines.Rdata"))
+
+dades<-readRDS(here::here("dades","BD_preparades_N929.Rds"))
+
+# CArrego funcions -------------------
+link_source<-paste0("https://github.com/jrealgatius/Stat_codis/blob/master/funcions_propies.R","?raw=T")
+devtools::source_url(link_source)
+
+conductor_variables<-here::here("VARIABLES.xls")
+
+```
+
+```{r filtres}
+##  Aplicar filtre  (Sin estatinas ni fibratos) --------------------------- 
+
+dades<-dades %>% filter(!(Statins=="Yes" | Fibrate=="Yes")) 
+
+
+```
+
+
+## Classificació de Perfil lipidic normal/alterat 
+
+Perfil lipídic convencional normal:
+- LDL-C was considered high at levels exceeding 130 mg/dL, or 100 mg/dL in patients with diabetes. 
+- HDL-C was considered low at levels of 40 mg/dL or less in men and 50 mg/dL or less in women.
+
+Perfil alterat: LDL-C>130 en No diabetics / LDL-C>100 en Diabetics or 
+Perfil alterat: HDL-C<=40 Homes / HDL-C<=50 Dones
+
+
+```{r preparacio,include=T}
+## Classificació de Perfil lipidic normal 
+
+# Perfil lipidic normal : 
+# •	Hdl-c: > 40 mg/dl: homes; >50 mg/dl dones
+# •	LDL-c: control normal és <115 mg/dl, en grup DM normal serà <70 mg/dl / <100 mg/dl. 
+
+dades<-dades %>% # select(HDL_cholesterol,LDL_cholesterol,DM, Sex) %>%
+  mutate(perfil_lipidic=case_when(HDL_cholesterol>40 & Sex=="Men" ~ "Normal",
+                                  HDL_cholesterol<=40 & Sex=="Men" ~ "Alterat",
+                                  
+                                  HDL_cholesterol>50 & Sex=="Women" ~ "Normal",
+                                  HDL_cholesterol<=50 & Sex=="Women" ~ "Alterat",
+                                  
+                                  LDL_cholesterol<=130 & DM=="No" ~ "Normal",
+                                  LDL_cholesterol>130 & DM=="No" ~ "Alterat",
+                                  
+                                  LDL_cholesterol<=100 & DM=="T2D" ~ "Normal",
+                                  LDL_cholesterol>100 & DM=="T2D" ~ "Alterat"
+                                  
+                                  ))
+
+dades %>% filter(perfil_lipidic=="Alterat") %>% sample_n(15) %>%
+  select(HDL_cholesterol,LDL_cholesterol,DM, Sex,perfil_lipidic) %>% 
+  kable(caption="Mostra de Perfil lipidic Alterat")
+
+dades %>% filter(perfil_lipidic=="Normal") %>% sample_n(15) %>% 
+  select(HDL_cholesterol,LDL_cholesterol,DM, Sex,perfil_lipidic) %>% 
+  kable(caption="Mostra de Perfil lipidic normal")
+
+
+descrTable(perfil_lipidic~HDL_cholesterol+LDL_cholesterol,data=dades %>% filter(DM=="T2D"), method = 2,Q1=0,Q3=1, show.p.overall = F,extra.labels = c("","","")) %>% 
+  strataTable("Sex") %>% 
+  export2md(caption = "Descriptiva de validació de perfil lipidic DM2 / LDL [Mínim ; Màxim]")
+
+descrTable(perfil_lipidic~HDL_cholesterol+LDL_cholesterol,data=dades %>% filter(DM!="T2D"), method = 2,Q1=0,Q3=1, show.p.overall = F,extra.labels = c("","","")) %>% 
+  strataTable("Sex") %>% 
+  export2md(caption = "Descriptiva de validació de perfil lipidic CONTROLS / LDL [Mínim ; Màxim]")
+
+
+```
+
+>	Agrupats en valors normals / anormals segons referencia:
+
+- Total LDL-P Control / DM : >1300 nmol/L, >1000 nmol/L
+- Large LDL-P: Control/DM: >200, >160
+- Medium LDL-P: Control/DM: >400, >260
+- Small LDL-P: Control/DM: >690, >560
+- TOTAL hdl-p:  24 umol/L
+- Medium HDL-P: 8.5 umol/L. 
+
+
+```{r, include=T}
+
+#	Agrupats en valors normals / anormals segons referencia:
+#	Total LDL-P Control / DM : >1300 nmol/L, >1000 nmol/L
+#	Large LDL-P: Control/DM: >200, >160
+#	Medium LDL-P: Control/DM: >400, >260
+#	Small LDL-P: Control/DM: >690, >560
+#	TOTAL hdl-p:  24 umol/L
+#	Medium HDL-P: 8,5 umol/L. 
+
+
+# dades %>% mutate %>% select(LDL_P_nmolL,Large_LDL_P_nmolL,Medium_LDL_P_nmolL,Small_LDL_P_nmolL,Total_PHDL_P,Medium_HDL_P_molL) 
+dades<-dades %>% mutate(LDL_P_cat= 
+                   case_when (LDL_P_nmolL<= 1300 & DM=="No"~"Normal",
+                              LDL_P_nmolL>1300 & DM=="No"~"Alterat",
+                            
+                              LDL_P_nmolL<=1000 & DM=="T2D"~"Normal",
+                              LDL_P_nmolL> 1000 & DM=="T2D"~"Alterat" ))
+
+descrTable(LDL_P_cat~LDL_P_nmolL, data=dades,show.p.overall = F,  method = 2,Q1=0,Q3=1,extra.labels = c("","","")) %>% 
+  strataTable("DM") %>%
+  export2md()
+
+
+dades<-dades %>% mutate(Large_LDL_P_cat= 
+                   case_when (Large_LDL_P_nmolL< 200 & DM=="No"~"Normal",
+                              Large_LDL_P_nmolL>=200 & DM=="No"~"Alterat",
+                            
+                              Large_LDL_P_nmolL< 160 & DM=="T2D"~"Normal",
+                              Large_LDL_P_nmolL>= 160 & DM=="T2D"~"Alterat" ))
+
+descrTable(Large_LDL_P_cat~Large_LDL_P_nmolL, data=dades,show.p.overall = F,  method = 2,Q1=0,Q3=1,extra.labels = c("","","")) %>% 
+  strataTable("DM") %>%
+  export2md()
+
+
+
+dades<-dades %>% mutate(Medium_LDL_P_cat= 
+                   case_when (Medium_LDL_P_nmolL< 400 & DM=="No"~"Normal",
+                              Medium_LDL_P_nmolL>=400 & DM=="No"~"Alterat",
+                        
+                              Medium_LDL_P_nmolL< 260 & DM=="T2D"~"Normal",
+                              Medium_LDL_P_nmolL>= 260 & DM=="T2D"~"Alterat" ))
+
+descrTable(Medium_LDL_P_cat~Medium_LDL_P_nmolL, data=dades,show.p.overall = F,  method = 2,Q1=0,Q3=1,extra.labels = c("","","")) %>% 
+  strataTable("DM") %>%
+  export2md()
+
+
+
+dades<-dades %>% mutate(Small_LDL_P_cat= 
+                   case_when (Small_LDL_P_nmolL< 690 & DM=="No"~"Normal",
+                              Small_LDL_P_nmolL>=690 & DM=="No"~"Alterat",
+                            
+                              Small_LDL_P_nmolL< 560 & DM=="T2D"~"Normal",
+                              Small_LDL_P_nmolL>= 560 & DM=="T2D"~"Alterat" ))
+
+descrTable(Small_LDL_P_cat~Small_LDL_P_nmolL, data=dades,show.p.overall = F,  method = 2,Q1=0,Q3=1,extra.labels = c("","","")) %>% 
+  strataTable("DM") %>%
+  export2md()
+
+
+
+dades<-dades %>% mutate(Total_PHDL_P_cat= 
+                   case_when (Total_PHDL_P< 24 ~ "Normal",
+                              Total_PHDL_P>=24 ~"Alterat"))
+descrTable(Total_PHDL_P_cat~Total_PHDL_P, data=dades,show.p.overall = F,  method = 2,Q1=0,Q3=1,extra.labels = c("","","")) %>% 
+  export2md()
+
+dades<-dades %>% mutate(Medium_HDL_P_cat= 
+                   case_when (Medium_HDL_P_molL< 8.5 ~ "Normal",
+                              Medium_HDL_P_molL>=8.5 ~"Alterat"))
+
+descrTable(Medium_HDL_P_cat~Medium_HDL_P_molL, data=dades,show.p.overall = F,  method = 2,Q1=0,Q3=1,extra.labels = c("","","")) %>% 
+  export2md()
+
+
+
+# Validació 
+# formu<-formula.text("lipos_cat","perfil_lipidic",taulavariables = conductor_variables)
+# descrTable(formu, data=dades, show.all = F,show.p.overall = F) %>% export2md()
+
+# 
+
+
+
+```
+
+
+## Descriptiva de la edat
+
+```{r, include=T}
+
+dades<-dades %>% mutate(Age_grup10=cut2(Age,g=10),Age_grup5=cut2(Age,g=5),Age_grup3=cut2(Age,g=3))
+
+descrTable(~Age+Age_grup10+Age_grup5+Age_grup3, dades, method = 2) %>% export2md()
+
+ggplot2::ggplot(dades,aes(Age)) + geom_histogram()
+
+
+```
+
+
+
+```{r}
+
+##    -Etiquetar variables  ----------------
+dades<-etiquetar(dades,taulavariables = conductor_variables)
+
+
+```
+
+
+
+## 3.Resultats 
+
+### 1 Características por grupo (control, prediabético y diabético)  
+
+
+```{r resultats1, include=T}
+
+#######################   CLINICAS  
+
+#########
+# ADD:            p valor comparacions 2 a 2 ---------
+T0.1.1<-descrTable(formula_compare(x="clinicas",y="Prediabetes",taulavariables =conductor_variables),data=dades,method = 1,show.p.mul = T)
+
+export2md(T0.1.1, caption = "Descriptive analysis of clinical variables by group")
+
+
+T0.1.2<-descrTable(formula_compare(x="clinicas_conti",y="Prediabetes",taulavariables =conductor_variables),data=dades,method = 2,show.p.overall = F)
+
+export2md(T0.1.2, caption = "Descriptive analysis of clinical variables by group (Median[Q1-Q3])")
+
+
+```
+
+
+### 2 Características clínicas por grupo (control, prediabético y diabético) por sexos
+
+
+```{r resultats2, include=T}
+
+#######################   CLINICAS  
+T0.1.1.sex<-strataTable(T0.1.1, "Sex")
+
+export2md(T0.1.1.sex, caption = "Descriptive analysis of clinical variables by group stratified by sex")
+
+
+T0.1.2.sex<-strataTable(T0.1.2, "Sex")
+
+export2md(T0.1.2.sex, caption = "Descriptive analysis of clinical variables by group (Median[Q1-Q3])")
+
+
+```
+
+
+### 3 Comparativa cruda de las lipoproteinas en cada grupo (control, prediabético y diabético)  
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+T1.1.1<-descrTable(formula_compare(x="lipos",y="Prediabetes",taulavariables =conductor_variables),data=dades,method=1,show.p.overall = F)
+
+export2md(T1.1.1, caption = "T1.1. Descriptive analysis liproteins variables by group (mean (SD))")
+
+
+T1.1.2<-descrTable(formula_compare(x="lipos",y="Prediabetes",taulavariables =conductor_variables),data=dades,method=2,show.p.overall = F)
+
+export2md(T1.1.2, caption = "T1.2. Descriptive analysis liproteins variables by group (Median [Q1;Q3])")
+
+T1.3<-descrTable(formula_compare(x="lipos2",y="Prediabetes",taulavariables =conductor_variables),data=dades,show.descr = F,show.p.overall = F,show.p.mul = T)
+T1.5<-Pvalors_ajustats_compare(objecte_compare=T1.3,metodo = "BH",p="p.mul")
+kable(T1.5,format="pandoc",digits=4, caption= "P adjusted by multitesting")
+
+
+T1.1.3<-descrTable(formula_compare(x="lipos",y="Prediabetes",taulavariables =conductor_variables),data=dades,method=2,show.p.overall = F,Q1=0.1,Q3=0.9)
+
+export2md(T1.1.3, caption = "T1.3. Descriptive analysis liproteins variables by group (P50 [P10;P90])")
+
+
+```
+
+
+### 4 Comparativa cruda de las lipoproteinas en cada grupo (control, prediabético y diabético)  Estratificado por sexos 
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+T1.1.1.sex<-strataTable(T1.1.1, "Sex")
+export2md(T1.1.1.sex, caption = "Descriptive analysis liproteins variables by group (mean (SD))")
+
+
+T1.1.2.sex<-strataTable(T1.1.1, "Sex")
+export2md(T1.1.2.sex, caption = "Descriptive analysis liproteins variables by group (Median [Q1;Q3])")
+
+T1.1.2<-descrTable(formula_compare(x="lipos",y="Prediabetes",taulavariables =conductor_variables),data=dades,method=2,show.p.overall = F,Q1=0.1,Q3=0.9)
+T1.1.3.sex<-strataTable(T1.1.2, "Sex")
+export2md(T1.1.3.sex, caption = "Descriptive analysis liproteins variables by group (Median [P10;P90])")
+
+## BY sex crude 
+# Ajustat multitesting 
+T1.3<-descrTable(formula_compare(x="lipos2",y="Prediabetes",taulavariables =conductor_variables),data=dades,subset = Sex=="Men",show.descr = F,show.p.overall = F,show.p.mul = T)
+T1.5.sexH<-Pvalors_ajustats_compare(objecte_compare=T1.3,metodo = "BH",p="p.mul")
+kable(T1.5.sexH,format="pandoc",digits=4, caption= "P adjusted by multitesting: Strata=H")
+
+
+T1.3<-descrTable(formula_compare(x="lipos2",y="Prediabetes",taulavariables =conductor_variables),data=dades,subset = Sex=="Women",show.descr = F,show.p.overall = F,show.p.mul = T)
+T1.5.sexD<-Pvalors_ajustats_compare(objecte_compare=T1.3,metodo = "BH",p="p.mul")
+kable(T1.5.sexD,format="pandoc",digits=4, caption= "P adjusted by multitesting: Strata=D")
+
+
+```
+
+### 5 Comparativa de las lipoproteinas cruda y ajustada en cada grupo (control, prediabético y diabético)  
+
+```{r}
+
+##  4. Coeficients crus i ajustats ---------------------
+## Capturo taula de coeficients, crus i ajustats
+z<-c("","age.sex.ajust","v.ajust")
+coeficients<-z %>% map(extreure_coef_glm,dt=dades,outcomes = "lipos2",x="Prediabetes",taulavariables =conductor_variables)
+
+taula_coef_cru<-
+  coeficients[[1]]$coef %>% 
+  as_tibble %>% 
+  setnames("Estimate","B_crude")
+
+taula_coef_age.sex<-
+  coeficients[[2]]$coef %>% 
+  as_tibble %>% 
+  setnames(c("Estimate","Pr(>|t|)"),
+           c("Badj_AgeSex","Padj_AgeSex"))
+  
+taula_coef_ajust<-
+  coeficients[[3]]$coef %>% 
+  as_tibble %>% 
+  setnames(c("Estimate","Pr(>|t|)"),
+           c("B_adj","P_adj"))
+
+taulacoef<-taula_coef_cru %>% 
+  cbind(
+    select(taula_coef_age.sex,-c(Outcome,Cat.X,`Std. Error`))) %>% 
+  cbind(
+    select(taula_coef_ajust,-c(Outcome,Cat.X,`Std. Error`))) %>% 
+  as_tibble
+
+
+##  Ajusto per comparacions multiples 
+taulacoef_DMvsPREDM<-Pvalors_ajustats_taula(objecte_taula=taulacoef, p.valors='P_adj', metodo="bonferroni") %>% 
+  select(-P_adj)
+
+text_taula<-extreure.variables("v.ajust",taulavariables = conductor_variables) %>% paste(collapse = "+")
+
+```
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+# Printo
+
+kable(taulacoef_DMvsPREDM,digits = 3,format="pandoc",caption=paste0("Adjusted by:",text_taula))
+
+
+```
+
+
+### 6 Comparativa de las lipoproteinas cruda y ajustada en cada grupo (control, prediabético y diabético) estratificado por sexos
+
+```{r}
+##  4. Coeficients crus i ajustats SRAT PER SEXE ------------------------
+dadesH<-dades %>% filter(Sex=="Men")
+dadesD<-dades %>% filter(Sex=="Women")
+
+## Capturo taula de coeficients, crus i ajustats   HOMES ------------
+z<-c("","age.ajust","v.ajust2")
+coeficients<-z %>% map(extreure_coef_glm,dt=dadesH,outcomes = "lipos2",x="Prediabetes",taulavariables =conductor_variables)
+
+taula_coef_cru<-coeficients[[1]]$coef %>% as_tibble %>% 
+  setnames("Estimate","B_crude")
+
+taula_coef_age.sex<-coeficients[[2]]$coef %>% as_tibble %>% 
+  setnames(c("Estimate","Pr(>|t|)"),
+           c("Badj_Age","Padj_Age"))
+
+taula_coef_ajust<-coeficients[[3]]$coef %>% as_tibble %>% 
+  setnames(c("Estimate","Pr(>|t|)"),
+           c("B_adj","P_adj"))
+
+taulacoef<-taula_coef_cru %>% 
+  cbind(select(taula_coef_age.sex,-c(Outcome,Cat.X,`Std. Error`))) %>% 
+  cbind(select(taula_coef_ajust,-c(Outcome,Cat.X,`Std. Error`))) %>% 
+  as_tibble
+
+##  Ajusto per comparacions multiples 
+taulacoef_DMvsPREDM_sexH<-Pvalors_ajustats_taula(objecte_taula=taulacoef, p.valors='P_adj', metodo="bonferroni") %>% 
+  select(-P_adj)
+
+text_taula<-extreure.variables("v.ajust2",taulavariables = conductor_variables) %>% paste(collapse = "+")
+# Resultats ---
+
+kable(taulacoef_DMvsPREDM_sexH,digits = 3,format="pandoc",caption=paste0("Adjusted by:",text_taula, ":Men"))
+
+```
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+### ???
+
+## Capturo taula de coeficients, crus i ajustats   DONES  ------------
+z<-c("","age.ajust","v.ajust2")
+coeficients<-z %>% map(extreure_coef_glm,dt=dadesD,outcomes = "lipos2",x="Prediabetes",taulavariables =conductor_variables)
+
+taula_coef_cru<-coeficients[[1]]$coef %>% as_tibble %>% 
+  setnames("Estimate","B_crude")
+
+taula_coef_age.sex<-coeficients[[2]]$coef %>% as_tibble %>% 
+  setnames(c("Estimate","Pr(>|t|)"),
+           c("Badj_Age","Padj_Age"))
+
+taula_coef_ajust<-coeficients[[3]]$coef %>% as_tibble %>% 
+  setnames(c("Estimate","Pr(>|t|)"),
+           c("B_adj","P_adj"))
+
+taulacoef<-taula_coef_cru %>% cbind(select(taula_coef_age.sex,-c(Outcome,Cat.X,`Std. Error`))) %>% 
+  cbind(select(taula_coef_ajust,-c(Outcome,Cat.X,`Std. Error`))) %>% 
+  as_tibble
+
+##  Ajusto per comparacions multiples 
+taulacoef_DMvsPREDM_sexD<-Pvalors_ajustats_taula(objecte_taula=taulacoef, p.valors='P_adj', metodo="bonferroni") %>% 
+  select(-P_adj)
+
+text_taula<-extreure.variables("v.ajust2",taulavariables = conductor_variables) %>% paste(collapse = "+")
+# Resultats ---
+
+kable(taulacoef_DMvsPREDM_sexD,digits = 3,format="pandoc",caption=paste0("Adjusted by:",text_taula, ":Women"))
+
+
+
+
+```
+
+
+### 7 Alteraciones de las lipos en función del grado de control glucémico en pacientes diabeticos 
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+##################    Clínicas 
+
+##  5.1. Taules descriptives Clíniques  --------------------
+##################    Clínicas 
+
+T2.0<-descrTable(formula_compare(x="clinicas",y="HbA1c_cat3",taulavariables =conductor_variables),data=dades,show.p.trend = T,show.p.overall = F)
+T2.0.sex<-strataTable(T2.0, "Sex")
+
+
+export2md(T2.0, caption="Variables clínicas")
+
+export2md(T2.0.sex, caption="Variables clínicas")
+
+
+
+```
+
+
+
+### 8 Alteraciones de las lipos en función del control glucémico en pacientes diabeticos 
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+##  5.2. Taules Lipos                   --------------------
+T2.1<-descrTable(formula_compare(x="lipos",y="HbA1c_cat3",taulavariables =conductor_variables),data=dades,show.p.trend = T,show.p.overall = F)
+
+export2md(T2.1, caption="Variables Lipos")
+print("")
+
+T2.1.sex<-strataTable(T2.1, "Sex")
+export2md(T2.1.sex, caption="Variables Lipos")
+print("")
+
+
+T2.2<-descrTable(formula_compare(x="lipos",y="HbA1c_cat3",taulavariables =conductor_variables),data=dades,show.p.trend = F,method = 4,show.p.overall = F)
+
+export2md(T2.2, caption="Median [Q1;Q3]")
+print("")
+
+T2.2.sex<-strataTable(T2.2, "Sex")
+
+export2md(T2.2.sex, caption="Median [Q1;Q3]")
+print("")
+
+
+##  5.3. Multitesting i ajustat   -----------------
+T2.3<-descrTable(formula_compare(x="lipos2",y="HbA1c_cat3",taulavariables =conductor_variables),data=dades,show.p.mul = T,show.descr = F,show.p.overall = F)
+taula_sig<-Pvalors_ajustats_compare(T2.3,metodo="BH",p="p.mul",Sig="Si")
+
+kable(taula_sig,caption="p values adjusted by multitesting",format="pandoc")
+
+
+T2.3<-descrTable(formula_compare(x="lipos2",y="HbA1c_cat3",taulavariables =conductor_variables),data=dadesH,show.p.mul = T,show.descr = F,show.p.overall = F)
+taula_sig.H<-Pvalors_ajustats_compare(T2.3,metodo="BH",p="p.mul",Sig="Si")
+kable(taula_sig.H,caption="p values adjusted by multitesting Homes",format="pandoc")
+
+
+T2.3<-descrTable(formula_compare(x="lipos2",y="HbA1c_cat3",taulavariables =conductor_variables),data=dadesD,show.p.mul = T,show.descr = F,show.p.overall = F)
+taula_sig.D<-Pvalors_ajustats_compare(T2.3,metodo="BH",p="p.mul",Sig="Si")
+kable(taula_sig.D,caption="p values adjusted by multitesting Dones",format="pandoc")
+
+
+
+```
+
+
+### 9 Adjusted analysis (HB categoritzat)
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+## Capturo taula de coeficients, crus i ajustats
+z<-c("","age.sex.ajust","v.ajust")
+coeficients<-z %>% map(extreure_coef_glm,dt=dades,outcomes = "lipos2",x="HbA1c_cat3",taulavariables =conductor_variables)
+
+taula_coef_cru<-
+  coeficients[[1]]$coef %>% 
+  as_tibble %>% 
+  setnames("Estimate","B_crude")
+
+taula_coef_age.sex<-
+  coeficients[[2]]$coef %>% 
+  as_tibble %>% 
+  setnames(c("Estimate","Pr(>|t|)"),
+           c("Badj_AgeSex","Padj_AgeSex"))
+
+taula_coef_ajust<-
+  coeficients[[3]]$coef %>% 
+  as_tibble %>% 
+  setnames(c("Estimate","Pr(>|t|)"),
+           c("B_adj","P_adj"))
+
+taulacoef<-taula_coef_cru %>% 
+  cbind(
+    select(taula_coef_age.sex,-c(Outcome,Cat.X,`Std. Error`))) %>% 
+  cbind(
+    select(taula_coef_ajust,-c(Outcome,Cat.X,`Std. Error`))) %>% 
+  as_tibble
+
+##  Ajusto per comparacions multiples 
+taulacoef_HB<-Pvalors_ajustats_taula(objecte_taula=taulacoef, p.valors='P_adj', metodo="bonferroni") %>% 
+  select(-P_adj)
+
+text_taula<-extreure.variables("v.ajust",taulavariables = conductor_variables) %>% paste(collapse = "+")
+
+kable(taulacoef_HB,digits = 3,format="pandoc",caption=paste0("Adjusted by:",text_taula))
+
+kable(taulacoef_HB,digits = 3,format="pandoc",caption=paste0("Adjusted by:",text_taula))
+
+
+```
+
+
+### 10 Regression analysis
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+## 5.4. Correlació directa de HB y lipos ####
+Correlacions_HB<-extreure_cor(var1="HbA1c",var="lipos2",d="dades",taulavariables=conductor_variables)
+
+# Coeficients crus no ajustats by GLM
+taula_coef_hb_crus<-extreure_coef_glm(dt=dades,outcomes="lipos2",x="HbA1c",z="",taulavariables=conductor_variables)
+TAULA_HB_Lipos_crus<-Pvalors_ajustats_taula(objecte_taula=taula_coef_hb_crus$coef, p.valors='Pr(>|t|)', metodo="bonferroni")
+kable(TAULA_HB_Lipos_crus,caption=taula_coef_hb_crus$caption,format="pandoc",digits = 3)
+
+# Coeficients ajustats by GLM
+taula_coef_hb_adj<-extreure_coef_glm(dt=dades,outcomes="lipos2",x="HbA1c",z="v.ajust",taulavariables=conductor_variables)
+TAULA_HB_Lipos_adj<-Pvalors_ajustats_taula(objecte_taula=taula_coef_hb_adj$coef, p.valors='Pr(>|t|)', metodo="bonferroni")
+
+
+kable(TAULA_HB_Lipos_crus,caption=taula_coef_hb_crus$caption,format="pandoc",digits = 3)
+
+print("")
+
+kable(TAULA_HB_Lipos_adj,caption=taula_coef_hb_adj$caption,format="pandoc",digits = 3)
+
+
+
+```
+
+
+### 11 Describir valores de normalidad (DLP=No & Prediabetes=No + Controles de Mollerussa+CanRuti) 
+
+> Filtro:  DLP=No & Prediabetes=No + Controles de Mollerussa+CanRuti
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+## * C) Describir valores de normalidad (DLP=No & Prediabetes=No + Controles de Mollerussa+CanRuti) -------------
+## Filtro:  DLP=No & Prediabetes=No + Controles de Mollerussa+CanRuti
+
+# dades<-dadestotal
+
+subset_dades<-dades %>% 
+  filter(DM=="No" & Origen!="Clinic") %>% 
+  filter(Prediabetes=="No") %>% 
+  filter (DLP=="No")
+
+subset_dades<-subset_dades %>% as.data.table()
+
+T3.1<-descrTable(~Total_cholesterol + HDL_cholesterol,data=subset_dades,method = 1)
+
+T3.1<-descrTable(formula_compare(x="lipos",y="",taulavariables =conductor_variables),data=subset_dades,method = 1)
+T3.1
+T3.1.sex<-strataTable(T3.1,"Sex")
+
+T3.2<-descrTable(formula_compare(x="lipos",y="",taulavariables =conductor_variables),data=subset_dades,method = 4)
+T3.2
+T3.2.sex<-strataTable(T3.2,"Sex")
+
+T3.3<-descrTable(formula_compare(x="lipos",y="",taulavariables =conductor_variables),data=subset_dades,method=4, Q1 = 0.10, Q3 = 0.90)
+T3.3
+T3.3.sex<-strataTable(T3.3,"Sex")
+
+export2md(rbind("Mean(SD)"=T3.1,"Median[Q1-Q3]"=T3.2,"Median[Min;Max]"=T3.3),caption="Descriptivos de valores de normalidad")
+
+
+```
+
+
+
+### 12 Describir valores de normalidad (DLP=No & Prediabetes=No + Controles de Mollerussa+CanRuti) estratificado por sexos e IMC
+
+> Descriptivos: Media (SD), Mediana [Q1-Q3], Mediana [p10;p90]
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+export2md(T3.1.sex,caption = "Descriptivos de valores de normalidad, mean (SD)")
+export2md(T3.2.sex,caption = "Descriptivos de valores de normalidad, Median[Q1-Q3]")
+export2md(T3.3.sex,caption = "Descriptivos de valores de normalidad, Median[P10;P90]")
+```
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+T4.1<-descrTable(formula_compare(x="lipos",y="",taulavariables =conductor_variables),data=subset_dades,method = 1)
+T4.1.IMC<-strataTable(T4.1,"BMI.cat4")
+
+T4.2<-descrTable(formula_compare(x="lipos",y="",taulavariables =conductor_variables),data=subset_dades,method = 4)
+T4.2
+T4.2.IMC<-strataTable(T4.2,"BMI.cat4")
+
+T4.3<-descrTable(formula_compare(x="lipos",y="",taulavariables =conductor_variables),data=subset_dades,method=4, Q1 = 0.10, Q3 = 0.9)
+T4.3
+T4.3.IMC<-strataTable(T4.3,"BMI.cat4")
+
+
+export2md(T4.1.IMC,caption = "Descriptivos de valores de normalidad, mean (SD)")
+export2md(T4.2.IMC,caption = "Descriptivos de valores de normalidad, Median[Q1-Q3]")
+export2md(T4.3.IMC,caption = "Descriptivos de valores de normalidad, Median[P10;P90]")
+```
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+T5.1<-descrTable(formula_compare(x="lipos",y="",taulavariables =conductor_variables),data=subset_dades,method = 1,show.n = F)
+T5.1.IMC<-strataTable(T5.1,"imc_sex",max.nlevels = 10)
+
+T5.2<-descrTable(formula_compare(x="lipos",y="",taulavariables =conductor_variables),data=subset_dades,method = 4,show.n = F)
+T5.2.IMC<-strataTable(T5.2,"imc_sex",max.nlevels = 10)
+
+T5.3<-descrTable(formula_compare(x="lipos",y="",taulavariables =conductor_variables),data=subset_dades,method = 4,show.n = F, Q1 = 0.10, Q3 = 0.9)
+T5.3.IMC<-strataTable(T5.3,"imc_sex",max.nlevels = 10)
+
+
+export2md(T5.1.IMC,caption = "Descriptivos de valores de normalidad, mean (SD)")
+export2md(T5.2.IMC,caption = "Descriptivos de valores de normalidad, Median[Q1-Q3]")
+export2md(T5.3.IMC,caption = "Descriptivos de valores de normalidad, Median[P10;P90]")
+
+
+```
+
+
+### 13  Evaluar diferéncias sig. entre sexos en el grupo control (n=463) en las diferentes lipoproteinas
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+# Seleciono només Controls
+dades<-dades %>% filter(Prediabetes=="No")
+
+taula.sex<-descrTable(formula_compare(x="lipos",y="Sex",taulavariables =conductor_variables),data=dades,show.p.overall = F)
+
+export2md(taula.sex,caption = "Descriptivo de valores de normalidad, mean (SD)")
+
+Pvalors_ajustats_compare(taula.sex,metodo = "BH",Sig="No") %>% kable(digits = 3) %>% kableExtra::kable_styling()
+
+
+```
+
+
+### 14  Evaluar diferéncias sig. entre sexos en el grupo control (n=463) en cuanto a características basales 
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+# Seleciono només Controls
+dades<-dades %>% filter(Prediabetes=="No")
+
+taula.sex<-descrTable(formula_compare(x="clinicas",y="Sex",taulavariables =conductor_variables),data=dades,show.p.overall = T)
+
+export2md(taula.sex,caption = "Características clínicas entre sexos")
+```
+
+### 15 Correlaciones entre Lipoproteinas - variables clínicas en grupo control
+
+> Correlograma 
+
+&check; Correlaciones de cada lipo con variables clínicas en grupo Control <br/>
+&check; Figura de correlaciones   <br/>
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge",fig.width=12, fig.height=12}
+
+dades<-dades %>% filter(Prediabetes=="No")
+
+
+llista1<-extreure.variables("clinicas_corr",conductor_variables)
+llista2<-extreure.variables("lipos2",conductor_variables)
+
+Mcor<-extreure_cor_multi(dades,llistavar1 =llista2,llistavar2= llista1,etiquetar=T,coductor_variables=conductor_variables,
+                         method = "circle",type=c("full"),lab_col = "black",colors = c("red", "white", "black"),outline.color = "grey")
+
+
+kable(Mcor$matriu,digits=3,caption="Coeficientes de correlacion de Pearson bivariandas")
+
+# Ploto el tema 
+Mcor$plot
+
+ggsave(here::here("figures","corr_plot.tiff"),Mcor$plot,width = 14,height = 10,dpi = 150)
+
+
+```
+
+### 16 Comparativa (de Lipos) entre hombres y mujeres población normuglucemicos 
+
+> Filtro:  DLP=No & Prediabetes=No + Controles de Mollerussa+CanRuti
+
+```{r,message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+descrTable(formula_compare(x="clinicas",y="Sex",taulavariables =conductor_variables),data=subset_dades,show.p.overall = T) %>%  
+  export2md(caption = "Características clínicas entre sexos")
+
+
+descrTable(formula_compare(x="lipos",y="Sex",taulavariables =conductor_variables),data=subset_dades,show.p.overall = T) %>% 
+  export2md(caption = "Lipos entre sexos")
+
+```
+
+### 17 Taula descriptiva per avaluar discordancia entre pacients amb perfil Lipidic normal / anormal  versus número de partícules de LDL (LDL-P) i d’HDL (HDL-P). 
+
+
+> Perfil lipídic convencional normal:
+- LDL-C was considered high at levels exceeding 130 mg/dL, or 100 mg/dL in patients with diabetes. 
+- HDL-C was considered low at levels of 40 mg/dL or less in men and 50 mg/dL or less in women.
+
+Perfil alterat: LDL-C>130 en No diabetics / LDL-C>100 en Diabetics or 
+Perfil alterat: HDL-C<=40 Homes / HDL-C<=50 Dones
+
+
+>	Agrupats en valors normals / anormals segons referencia:
+
+- Total LDL-P Control / DM : >1300 nmol/L, >1000 nmol/L
+- Large LDL-P: Control/DM: >200, >160
+- Medium LDL-P: Control/DM: >400, >260
+- Small LDL-P: Control/DM: >690, >560
+- TOTAL hdl-p:  24 umol/L
+- Medium HDL-P: 8.5 umol/L. 
+
+
+```{r, include=T}
+
+
+formu<-formula.text("lipos_cat","perfil_lipidic",taulavariables = conductor_variables)
+descrTable(formu, data=dades, show.all = F,show.p.overall = F) %>% export2md()
+
+# 
+
+```
+
+### 18 Taula 2: per rangs d’edat (nosaltres et direm els punts de tall). (màxim tres grups d’edat)
+
+
+Taula 2: per rangs d’edat (nosaltres et direm els punts de tall). 
+- Afegir percentile 5 I 95. (maxim tres grups d’edat). 
+
+
+
+```{r,include=T}
+
+gc() %>% invisible()
+
+# Seleciono només Controls
+dades<-dades %>% filter(Prediabetes=="No")
+
+
+### Descriptiva de lipos per grups d'edat i sexe 
+
+table1::table1(formula_table1(x="lipos",y="Age_grup5",taulavariables =conductor_variables),data=dades,overall=F,
+               render.continuous=c(.="Mean (SD)",.="Median [Q1,Q3]",.="[q05 , q95]"))
+
+
+table1::table1(formula_table1(x="lipos",y="Age_grup3",taulavariables =conductor_variables),data=dades,overall=F,
+               render.continuous=c(.="Mean (SD)",.="Median [Q1,Q3]",.="[q05 , q95]"))
+
+
+table1::table1(formula_table1(x="lipos",y="Sex*Age_grup3",taulavariables =conductor_variables),data=dades,overall=F,
+               render.continuous=c(.="Mean (SD)",.="Median [Q1,Q3]",.="[q05 , q95]"))
+
+formu<-formula.text("lipos","Age_grup3",taulavariables = conductor_variables)
+descrTable(formu, data=dades, show.all = F, show.p.trend = T,show.p.overall = F) %>% export2md()
+
+```
+
+
+&nbsp;
+<hr />
+<p style="text-align: center;">A work by $Jordi Real$ </a></p>
+<p style="text-align: center;"><span style="color: #808080;"><em><https://github.com/USR-DAPCAT/></em></span></p>
+
+
+
